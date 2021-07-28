@@ -151,6 +151,7 @@ mark_as_advanced(EXPAT_MIN_SIZE)
 if(MSVC OR _EXPAT_HELP)
     set(EXPAT_MSVC_STATIC_CRT OFF CACHE BOOL "Use /MT flag (static CRT) when compiling in MSVC")
 endif()
+option(EXPAT_MSVC_USE_DEBUG_POSTFIX "Append 'd' to debug binaries" ON)
 
 if(EXPAT_BUILD_TESTS)
     # We have to call enable_language() before modifying any CMAKE_CXX_* variables
@@ -349,7 +350,7 @@ foreach(postfix_var
         CMAKE_MINSIZEREL_POSTFIX
         CMAKE_RELWITHDEBINFO_POSTFIX
         )
-    if(WIN32 AND postfix_var STREQUAL "CMAKE_DEBUG_POSTFIX")
+    if(WIN32 AND postfix_var STREQUAL "CMAKE_DEBUG_POSTFIX" AND EXPAT_MSVC_USE_DEBUG_POSTFIX)
         set(_POSTFIX_DEBUG "d")
     else()
         set(_POSTFIX_DEBUG "")  # needs a reset because of being looped
