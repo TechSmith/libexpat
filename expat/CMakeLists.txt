@@ -163,6 +163,7 @@ if(NOT _EXPAT_HELP)
     expat_shy_set(_EXPAT_M32 OFF CACHE BOOL "(Unofficial!) Produce 32bit code with -m32")
     mark_as_advanced(_EXPAT_M32)
 endif()
+option(EXPAT_MSVC_USE_DEBUG_POSTFIX "Append 'd' to debug binaries" ON)
 
 if(EXPAT_BUILD_TESTS)
     # We have to call enable_language() before modifying any CMAKE_CXX_* variables
@@ -425,7 +426,7 @@ foreach(build_type_upper
         MINSIZEREL
         RELWITHDEBINFO
         )
-    if(WIN32 AND build_type_upper STREQUAL "DEBUG")
+    if(WIN32 AND build_type_upper STREQUAL "DEBUG" AND EXPAT_MSVC_USE_DEBUG_POSTFIX)
         set(_POSTFIX_DEBUG "d")
     else()
         set(_POSTFIX_DEBUG "")  # needs a reset because of being looped
