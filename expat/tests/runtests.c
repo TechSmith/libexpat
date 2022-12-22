@@ -131,11 +131,12 @@ static void
 _xml_failure(XML_Parser parser, const char *file, int line) {
   char buffer[1024];
   enum XML_Error err = XML_GetErrorCode(parser);
-  sprintf(buffer,
-          "    %d: %" XML_FMT_STR " (line %" XML_FMT_INT_MOD
-          "u, offset %" XML_FMT_INT_MOD "u)\n    reported from %s, line %d\n",
-          err, XML_ErrorString(err), XML_GetCurrentLineNumber(parser),
-          XML_GetCurrentColumnNumber(parser), file, line);
+  snprintf(buffer,
+           sizeof(buffer),
+           "    %d: %" XML_FMT_STR " (line %" XML_FMT_INT_MOD
+           "u, offset %" XML_FMT_INT_MOD "u)\n    reported from %s, line %d\n",
+           err, XML_ErrorString(err), XML_GetCurrentLineNumber(parser),
+           XML_GetCurrentColumnNumber(parser), file, line);
   _fail_unless(0, file, line, buffer);
 }
 
@@ -748,11 +749,11 @@ START_TEST(test_illegal_utf8) {
   int i;
 
   for (i = 128; i <= 255; ++i) {
-    sprintf(text, "<e>%ccd</e>", i);
+    snprintf(text, sizeof(text), "<e>%ccd</e>", i);
     if (_XML_Parse_SINGLE_BYTES(g_parser, text, (int)strlen(text), XML_TRUE)
         == XML_STATUS_OK) {
-      sprintf(text, "expected token error for '%c' (ordinal %d) in UTF-8 text",
-              i, i);
+      snprintf(text, 100, "expected token error for '%c' (ordinal %d) in UTF-8 text",
+               i, i);
       fail(text);
     } else if (XML_GetErrorCode(g_parser) != XML_ERROR_INVALID_TOKEN)
       xml_failure(g_parser);
@@ -1060,7 +1061,7 @@ START_TEST(test_line_number_after_parse) {
   lineno = XML_GetCurrentLineNumber(g_parser);
   if (lineno != 4) {
     char buffer[100];
-    sprintf(buffer, "expected 4 lines, saw %" XML_FMT_INT_MOD "u", lineno);
+    snprintf(buffer, sizeof(buffer), "expected 4 lines, saw %" XML_FMT_INT_MOD "u", lineno);
     fail(buffer);
   }
 }
@@ -1077,7 +1078,7 @@ START_TEST(test_column_number_after_parse) {
   colno = XML_GetCurrentColumnNumber(g_parser);
   if (colno != 11) {
     char buffer[100];
-    sprintf(buffer, "expected 11 columns, saw %" XML_FMT_INT_MOD "u", colno);
+    snprintf(buffer, sizeof(buffer), "expected 11 columns, saw %" XML_FMT_INT_MOD "u", colno);
     fail(buffer);
   }
 }
@@ -1146,7 +1147,7 @@ START_TEST(test_line_number_after_error) {
   lineno = XML_GetCurrentLineNumber(g_parser);
   if (lineno != 3) {
     char buffer[100];
-    sprintf(buffer, "expected 3 lines, saw %" XML_FMT_INT_MOD "u", lineno);
+    snprintf(buffer, sizeof(buffer), "expected 3 lines, saw %" XML_FMT_INT_MOD "u", lineno);
     fail(buffer);
   }
 }
@@ -1165,7 +1166,7 @@ START_TEST(test_column_number_after_error) {
   colno = XML_GetCurrentColumnNumber(g_parser);
   if (colno != 4) {
     char buffer[100];
-    sprintf(buffer, "expected 4 columns, saw %" XML_FMT_INT_MOD "u", colno);
+    snprintf(buffer, sizeof(buffer), "expected 4 columns, saw %" XML_FMT_INT_MOD "u", colno);
     fail(buffer);
   }
 }
@@ -1360,10 +1361,11 @@ check_attr_contains_normalized_whitespace(void *userData, const XML_Char *name,
         || xcstrcmp(XCS("refs"), attrname) == 0) {
       if (! is_whitespace_normalized(value, 0)) {
         char buffer[256];
-        sprintf(buffer,
-                "attribute value not normalized: %" XML_FMT_STR
-                "='%" XML_FMT_STR "'",
-                attrname, value);
+        snprintf(buffer,
+                 sizeof(buffer),
+                 "attribute value not normalized: %" XML_FMT_STR
+                 "='%" XML_FMT_STR "'",
+                 attrname, value);
         fail(buffer);
       }
     }
@@ -2364,10 +2366,11 @@ START_TEST(test_bad_cdata) {
 
     if (actualError != cases[i].expectedError) {
       char message[100];
-      sprintf(message,
-              "Expected error %d but got error %d for case %u: \"%s\"\n",
-              cases[i].expectedError, actualError, (unsigned int)i + 1,
-              cases[i].text);
+      snprintf(message,
+               sizeof(message),
+               "Expected error %d but got error %d for case %u: \"%s\"\n",
+               cases[i].expectedError, actualError, (unsigned int)i + 1,
+               cases[i].text);
       fail(message);
     }
 
@@ -2437,12 +2440,13 @@ START_TEST(test_bad_cdata_utf16) {
     if (actual_error != cases[i].expected_error) {
       char message[1024];
 
-      sprintf(message,
-              "Expected error %d (%" XML_FMT_STR "), got %d (%" XML_FMT_STR
-              ") for case %lu\n",
-              cases[i].expected_error, XML_ErrorString(cases[i].expected_error),
-              actual_error, XML_ErrorString(actual_error),
-              (long unsigned)(i + 1));
+      snprintf(message,
+               sizeof(message),
+               "Expected error %d (%" XML_FMT_STR "), got %d (%" XML_FMT_STR
+               ") for case %lu\n",
+               cases[i].expected_error, XML_ErrorString(cases[i].expected_error),
+               actual_error, XML_ErrorString(actual_error),
+               (long unsigned)(i + 1));
       fail(message);
     }
     XML_ParserReset(g_parser, NULL);
@@ -6485,11 +6489,11 @@ triplet_start_checker(void *userData, const XML_Char *name,
   XML_Char **elemstr = (XML_Char **)userData;
   char buffer[1024];
   if (xcstrcmp(elemstr[0], name) != 0) {
-    sprintf(buffer, "unexpected start string: '%" XML_FMT_STR "'", name);
+    snprintf(buffer, sizeof(buffer), "unexpected start string: '%" XML_FMT_STR "'", name);
     fail(buffer);
   }
   if (xcstrcmp(elemstr[1], atts[0]) != 0) {
-    sprintf(buffer, "unexpected attribute string: '%" XML_FMT_STR "'", atts[0]);
+    snprintf(buffer, sizeof(buffer), "unexpected attribute string: '%" XML_FMT_STR "'", atts[0]);
     fail(buffer);
   }
   triplet_start_flag = XML_TRUE;
@@ -6504,7 +6508,7 @@ triplet_end_checker(void *userData, const XML_Char *name) {
   XML_Char **elemstr = (XML_Char **)userData;
   if (xcstrcmp(elemstr[0], name) != 0) {
     char buffer[1024];
-    sprintf(buffer, "unexpected end string: '%" XML_FMT_STR "'", name);
+    snprintf(buffer, sizeof(buffer), "unexpected end string: '%" XML_FMT_STR "'", name);
     fail(buffer);
   }
   triplet_end_flag = XML_TRUE;
