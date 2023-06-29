@@ -10,13 +10,14 @@
    Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
    Copyright (c) 2001-2003 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2004-2009 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2005-2007 Steven Solie <ssolie@users.sourceforge.net>
-   Copyright (c) 2016-2021 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2005-2007 Steven Solie <steven@solie.ca>
+   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
    Copyright (c) 2020      Joe Orton <jorton@redhat.com>
    Copyright (c) 2020      Kleber Tarcísio <klebertarcisio@yahoo.com.br>
    Copyright (c) 2021      Tim Bray <tbray@textuality.com>
+   Copyright (c) 2022      Martin Ettl <ettl.martin78@googlemail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -177,7 +178,7 @@ is equivalent to lexicographically comparing based on the character number. */
 
 static int
 attcmp(const void *att1, const void *att2) {
-  return tcscmp(*(const XML_Char **)att1, *(const XML_Char **)att2);
+  return tcscmp(*(const XML_Char *const *)att1, *(const XML_Char *const *)att2);
 }
 
 static void XMLCALL
@@ -214,10 +215,10 @@ endElement(void *userData, const XML_Char *name) {
 
 static int
 nsattcmp(const void *p1, const void *p2) {
-  const XML_Char *att1 = *(const XML_Char **)p1;
-  const XML_Char *att2 = *(const XML_Char **)p2;
+  const XML_Char *att1 = *(const XML_Char *const *)p1;
+  const XML_Char *att2 = *(const XML_Char *const *)p2;
   int sep1 = (tcsrchr(att1, NSSEP) != 0);
-  int sep2 = (tcsrchr(att1, NSSEP) != 0);
+  int sep2 = (tcsrchr(att2, NSSEP) != 0);
   if (sep1 != sep2)
     return sep1 - sep2;
   return tcscmp(att1, att2);
@@ -369,8 +370,8 @@ xcscmp(const XML_Char *xs, const XML_Char *xt) {
 
 static int
 notationCmp(const void *a, const void *b) {
-  const NotationList *const n1 = *(NotationList **)a;
-  const NotationList *const n2 = *(NotationList **)b;
+  const NotationList *const n1 = *(const NotationList *const *)a;
+  const NotationList *const n2 = *(const NotationList *const *)b;
 
   return xcscmp(n1->notationName, n2->notationName);
 }
@@ -963,7 +964,7 @@ tmain(int argc, XML_Char **argv) {
   int continueOnError = 0;
 
   float attackMaximumAmplification = -1.0f; /* signaling "not set" */
-  unsigned long long attackThresholdBytes;
+  unsigned long long attackThresholdBytes = 0;
   XML_Bool attackThresholdGiven = XML_FALSE;
 
   int exitCode = XMLWF_EXIT_SUCCESS;
@@ -1050,7 +1051,7 @@ tmain(int argc, XML_Char **argv) {
       XMLWF_SHIFT_ARG_INTO(valueText, argc, argv, i, j);
 
       errno = 0;
-      XML_Char *afterValueText = (XML_Char *)valueText;
+      XML_Char *afterValueText = NULL;
       attackMaximumAmplification = tcstof(valueText, &afterValueText);
       if ((errno != 0) || (afterValueText[0] != T('\0'))
           || isnan(attackMaximumAmplification)
@@ -1128,6 +1129,8 @@ tmain(int argc, XML_Char **argv) {
 #ifdef XML_DTD
       XML_SetBillionLaughsAttackProtectionActivationThreshold(
           parser, attackThresholdBytes);
+#else
+      (void)attackThresholdBytes; // silence -Wunused-but-set-variable
 #endif
     }
 
@@ -1173,9 +1176,9 @@ tmain(int argc, XML_Char **argv) {
       if (! userData.fp) {
         tperror(outName);
         exitCode = XMLWF_EXIT_OUTPUT_ERROR;
+        free(outName);
+        XML_ParserFree(parser);
         if (continueOnError) {
-          free(outName);
-          cleanupUserData(&userData);
           continue;
         } else {
           break;
